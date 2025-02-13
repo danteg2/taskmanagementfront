@@ -1,19 +1,42 @@
-import React from 'react';
-import { Routes, Route, Link } from 'react-router-dom';
-import Login from './components/Login';
-import User from './components/User';
+import React, { Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Navigate } from 'react-router-dom';
+
+const Login = React.lazy(() => import('./components/Login'));
+const User = React.lazy(() => import('./components/User'));
+const Task = React.lazy(() => import('./components/Task'));
+
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
+};
 
 const App = () => {
   return (
-    <div>
-      <nav>
-        <Link to="/">Login</Link> | <Link to="/users">User List</Link>
-      </nav>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/users" element={<User />} />
-      </Routes>
-    </div>
+    <AuthProvider>
+        <Suspense fallback={<div>Cargando...</div>}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/user" element={
+              <ProtectedRoute>
+                <User />
+              </ProtectedRoute>
+            } />
+            <Route path="/task" element={
+              <ProtectedRoute>
+                <Task />
+              </ProtectedRoute>
+            } />
+            <Route path="/" element={<User />} />
+          </Routes>
+        </Suspense>
+    </AuthProvider>
   );
 };
 
